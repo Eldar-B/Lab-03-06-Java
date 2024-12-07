@@ -1,10 +1,8 @@
-import java.util.ArrayList;
 import java.util.Scanner;
 
 class PricingPolicy {
     private String update = "last price update 25.11.2024";
     private float fieldCost = 500000;
-
     private float timePlowing = 5, costPlowing = 13000;
     private float timeCultivation = 3, costCultivation = 11500;
     private float timeRolling = 2, costRolling = 10000;
@@ -61,38 +59,52 @@ class PricingPolicy {
     public String getUpdate() {
         return update;
     }
+
+    public String getFormattedUpdate() {
+        return "Date of last update: " + update.substring(update.indexOf("25.11.2024"));
+    }
+}
+
+class Result {
+    private int value;
+
+    public Result(int value) {
+        this.value = value;
+    }
+
+    public int getValue() {
+        return value;
+    }
 }
 
 class FieldCharacteristics {
+    private static int totalFields = 0; // Статическое поле для подсчета объектов
     private float fieldCost = 0, size = 0;
-
     private float timePlowing = 0, costPlowing = 0;
     private float timeCultivation = 0, costCultivation = 0;
     private float timeRolling = 0, costRolling = 0;
     private float costFertilization = 0, timeFertilization = 0, volumeMineralFertilizers = 0;
-
     private float finalTime = 0, finalCost = 0;
 
     public FieldCharacteristics(float size, PricingPolicy pp) {
         this.size = size;
-
         this.fieldCost = pp.getFieldCost() * size;
-
         this.timePlowing = pp.getTimePlowing() * size;
         this.costPlowing = pp.getCostPlowing() * size;
-
         this.timeCultivation = pp.getTimeCultivation() * size;
         this.costCultivation = pp.getCostCultivation() * size;
-
         this.timeRolling = pp.getTimeRolling() * size;
         this.costRolling = pp.getCostRolling() * size;
-
         this.costFertilization = pp.getCostFertilization() * size;
         this.timeFertilization = pp.getTimeFertilization() * size;
         this.volumeMineralFertilizers = pp.getVolumeMineralFertilizers() * size;
-
         this.finalTime = pp.getFinalTime() * size;
         this.finalCost = pp.getFinalCost() * size;
+        totalFields++;
+    }
+
+    public static int getTotalFields() {
+        return totalFields;
     }
 
     public void display() {
@@ -113,32 +125,42 @@ class FieldCharacteristics {
         System.out.println("================================");
         System.out.println("Additional (volume of mineral fertilizers): " + volumeMineralFertilizers + " L");
     }
+
+    public boolean compareFinalCost(FieldCharacteristics other) {
+        return this.finalCost > other.finalCost;
+    }
+
+    public Result getSizeAsResult() {
+        return new Result((int) size);
+    }
 }
+
 public class Main {
     public static void main(String[] args) {
         PricingPolicy pp = new PricingPolicy();
-        ArrayList<FieldCharacteristics> fieldList = new ArrayList<>();
+        FieldCharacteristics[] fields = new FieldCharacteristics[5]; // Массив объектов
+        int currentFieldIndex = 0;
+
         Scanner scanner = new Scanner(System.in);
         int gameStatus = 0;
-
         do {
             System.out.println("================================");
-            System.out.println("Add field | Show info | Exit");
+            System.out.println("Add field | Show info | Show total fields | Exit");
+            System.out.println("    1     |     2     |         4         |   3");
             System.out.println("================================");
-            System.out.println("    1     |     2     |   3");
-            System.out.println("================================");
-
             gameStatus = scanner.nextInt();
 
-            if (gameStatus == 1) {
+            if (gameStatus == 1 && currentFieldIndex < fields.length) {
                 System.out.print("Enter field size in He: ");
                 float size = scanner.nextFloat();
-                fieldList.add(new FieldCharacteristics(size, pp));
+                fields[currentFieldIndex++] = new FieldCharacteristics(size, pp);
             } else if (gameStatus == 2) {
-                for (int i = 0; i < fieldList.size(); i++) {
+                for (int i = 0; i < currentFieldIndex; i++) {
                     System.out.println("Field " + (i + 1) + " details:");
-                    fieldList.get(i).display();
+                    fields[i].display();
                 }
+            } else if (gameStatus == 4) {
+                System.out.println("Total fields created: " + FieldCharacteristics.getTotalFields());
             }
         } while (gameStatus != 3);
 
