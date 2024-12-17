@@ -1,10 +1,20 @@
-import java.util.Scanner;
+import java.util.*;
 
-// Класс исключения для обработки недопустимых размеров полей
-class InvalidFieldSizeException extends Exception {
-    public InvalidFieldSizeException(String message) {
-        super(message);
+// Базовый класс
+abstract class Field {
+    protected float size;
+
+    public Field(float size) {
+        this.size = size;
     }
+
+    public float getSize() {
+        return size;
+    }
+
+    public abstract float getCost();
+
+    public abstract void display();
 }
 
 // Класс политики ценообразования
@@ -16,39 +26,66 @@ class PricingPolicy {
     private float timeRolling = 2, costRolling = 10000;
     private float costFertilization = 11500, timeFertilization = 1, volumeMineralFertilizers = 100;
 
-    public float getFieldCost() { return fieldCost; }
-    public float getTimePlowing() { return timePlowing; }
-    public float getCostPlowing() { return costPlowing; }
-    public float getTimeCultivation() { return timeCultivation; }
-    public float getCostCultivation() { return costCultivation; }
-    public float getTimeRolling() { return timeRolling; }
-    public float getCostRolling() { return costRolling; }
-    public float getTimeFertilization() { return timeFertilization; }
-    public float getCostFertilization() { return costFertilization; }
-    public float getVolumeMineralFertilizers() { return volumeMineralFertilizers; }
+    public float getFieldCost() {
+        return fieldCost;
+    }
+
+    public float getTimePlowing() {
+        return timePlowing;
+    }
+
+    public float getCostPlowing() {
+        return costPlowing;
+    }
+
+    public float getTimeCultivation() {
+        return timeCultivation;
+    }
+
+    public float getCostCultivation() {
+        return costCultivation;
+    }
+
+    public float getTimeRolling() {
+        return timeRolling;
+    }
+
+    public float getCostRolling() {
+        return costRolling;
+    }
+
+    public float getTimeFertilization() {
+        return timeFertilization;
+    }
+
+    public float getCostFertilization() {
+        return costFertilization;
+    }
+
+    public float getVolumeMineralFertilizers() {
+        return volumeMineralFertilizers;
+    }
+
     public float getFinalTime() {
         return timePlowing + timeCultivation + timeRolling + timeFertilization;
     }
+
     public float getFinalCost() {
         return costPlowing + costCultivation + costRolling + costFertilization;
     }
 }
 
-// Класс характеристик поля
-class FieldCharacteristics {
-    private static int totalFields = 0;
-    private float fieldCost = 0, size = 0;
+// Производный класс - Характеристики стандартного поля
+class FieldCharacteristics extends Field {
+    private float fieldCost = 0;
     private float timePlowing = 0, costPlowing = 0;
     private float timeCultivation = 0, costCultivation = 0;
     private float timeRolling = 0, costRolling = 0;
     private float costFertilization = 0, timeFertilization = 0, volumeMineralFertilizers = 0;
     private float finalTime = 0, finalCost = 0;
 
-    public FieldCharacteristics(float size, PricingPolicy pp) throws InvalidFieldSizeException {
-        if (size <= 0) {
-            throw new InvalidFieldSizeException("Field size must be greater than zero.");
-        }
-        this.size = size;
+    public FieldCharacteristics(float size, PricingPolicy pp) {
+        super(size);
         this.fieldCost = pp.getFieldCost() * size;
         this.timePlowing = pp.getTimePlowing() * size;
         this.costPlowing = pp.getCostPlowing() * size;
@@ -61,30 +98,39 @@ class FieldCharacteristics {
         this.volumeMineralFertilizers = pp.getVolumeMineralFertilizers() * size;
         this.finalTime = pp.getFinalTime() * size;
         this.finalCost = pp.getFinalCost() * size;
-        totalFields++;
     }
 
-    public static int getTotalFields() {
-        return totalFields;
+    @Override
+    public float getCost() {
+        return finalCost;
     }
 
+    @Override
     public void display() {
         System.out.println("Field size: " + size + " He");
         System.out.println("Field cost: " + fieldCost + " rub");
-        System.out.println("================================");
-        System.out.println("Plowing time: " + timePlowing + " h");
-        System.out.println("Cultivation time: " + timeCultivation + " h");
-        System.out.println("Rolling time: " + timeRolling + " h");
-        System.out.println("Fertilization time: " + timeFertilization + " h");
-        System.out.println("Final time: " + finalTime + " h");
-        System.out.println("================================");
-        System.out.println("Plowing cost: " + costPlowing + " rub");
-        System.out.println("Cultivation cost: " + costCultivation + " rub");
-        System.out.println("Rolling cost: " + costRolling + " rub");
-        System.out.println("Fertilization cost: " + costFertilization + " rub");
         System.out.println("Final cost: " + finalCost + " rub");
-        System.out.println("================================");
-        System.out.println("Additional (volume of mineral fertilizers): " + volumeMineralFertilizers + " L");
+    }
+}
+
+// Производный класс - Особенное поле
+class SpecialField extends Field {
+    private float extraCost;
+
+    public SpecialField(float size, float extraCost) {
+        super(size);
+        this.extraCost = extraCost;
+    }
+
+    @Override
+    public float getCost() {
+        return size * extraCost;
+    }
+
+    @Override
+    public void display() {
+        System.out.println("Special field size: " + size + " He");
+        System.out.println("Special field cost: " + getCost() + " rub");
     }
 }
 
@@ -92,44 +138,58 @@ class FieldCharacteristics {
 public class Main {
     public static void main(String[] args) {
         PricingPolicy pp = new PricingPolicy();
-        FieldCharacteristics[] fields = new FieldCharacteristics[5]; // Одномерный массив объектов
-        FieldCharacteristics[][] regionalFields = new FieldCharacteristics[2][2]; // Двумерный массив объектов
+        List<Field> fields = new ArrayList<>();
 
         Scanner scanner = new Scanner(System.in);
-        int currentFieldIndex = 0;
-
-        int gameStatus = 0;
+        int choice;
         do {
             System.out.println("================================");
-            System.out.println("Add field | Show info | Show total fields | Exit");
-            System.out.println("    1     |     2     |         4         |   3");
+            System.out.println("1. Add standard field");
+            System.out.println("2. Add special field");
+            System.out.println("3. Show all fields");
+            System.out.println("4. Sort fields by cost");
+            System.out.println("5. Search field by size");
+            System.out.println("6. Exit");
             System.out.println("================================");
+            choice = scanner.nextInt();
 
             try {
-                gameStatus = scanner.nextInt();
-
-                if (gameStatus == 1 && currentFieldIndex < fields.length) {
+                if (choice == 1) {
                     System.out.print("Enter field size in He: ");
                     float size = scanner.nextFloat();
-
-                    try {
-                        fields[currentFieldIndex++] = new FieldCharacteristics(size, pp);
-                    } catch (InvalidFieldSizeException e) {
-                        System.out.println("Error: " + e.getMessage());
+                    fields.add(new FieldCharacteristics(size, pp));
+                } else if (choice == 2) {
+                    System.out.print("Enter special field size in He: ");
+                    float size = scanner.nextFloat();
+                    System.out.print("Enter extra cost per hectare: ");
+                    float extraCost = scanner.nextFloat();
+                    fields.add(new SpecialField(size, extraCost));
+                } else if (choice == 3) {
+                    for (Field field : fields) {
+                        field.display();
                     }
-                } else if (gameStatus == 2) {
-                    for (int i = 0; i < currentFieldIndex; i++) {
-                        System.out.println("Field " + (i + 1) + " details:");
-                        fields[i].display();
+                } else if (choice == 4) {
+                    fields.sort(Comparator.comparing(Field::getCost));
+                    System.out.println("Fields sorted by cost.");
+                } else if (choice == 5) {
+                    System.out.print("Enter field size to search: ");
+                    float size = scanner.nextFloat();
+                    Field result = fields.stream()
+                            .filter(field -> field.getSize() == size)
+                            .findFirst()
+                            .orElse(null);
+                    if (result != null) {
+                        System.out.println("Field found:");
+                        result.display();
+                    } else {
+                        System.out.println("No field found with size " + size + " He.");
                     }
-                } else if (gameStatus == 4) {
-                    System.out.println("Total fields created: " + FieldCharacteristics.getTotalFields());
                 }
             } catch (Exception e) {
-                System.out.println("Invalid input. Please enter a valid number.");
-                scanner.nextLine(); // Очистка ввода
+                System.out.println("Error: " + e.getMessage());
+                scanner.nextLine();
             }
-        } while (gameStatus != 3);
+        } while (choice != 6);
 
         scanner.close();
     }
